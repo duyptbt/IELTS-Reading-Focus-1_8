@@ -1,0 +1,8 @@
+{
+  "name": "IELTS Reading Skill Focus - P1_8",
+  "description": "Interactive IELTS Reading practice and test simulation for Reading Passage 1: The impact of climate change on butterflies in Britain (Questions 1–13), with 20-minute timer, text highlighter, collapsible notes, and detailed bilingual explanations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
