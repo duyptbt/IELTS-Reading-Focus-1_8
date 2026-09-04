@@ -1,7 +1,7 @@
 import React from 'react';
 import { QuestionItem, Mode, UserAnswerState } from '../types';
 import { checkAnswerCorrectness } from '../data/ieltsData';
-import { CheckCircle, XCircle, BookOpen, ExternalLink, AlertTriangle, Bug, Sparkles } from 'lucide-react';
+import { CheckCircle, XCircle, BookOpen, ExternalLink, AlertTriangle, Bug, Sparkles, Flag } from 'lucide-react';
 
 interface TableCompletionViewProps {
   questions: QuestionItem[];
@@ -13,6 +13,8 @@ interface TableCompletionViewProps {
   onCheckQuestion?: (questionId: number) => void;
   onJumpToParagraph: (paragraphId: number) => void;
   explanationLanguage: 'bilingual' | 'vi' | 'en';
+  flaggedQuestions?: Set<number>;
+  onToggleFlag?: (questionId: number) => void;
 }
 
 export const TableCompletionView: React.FC<TableCompletionViewProps> = ({
@@ -24,10 +26,12 @@ export const TableCompletionView: React.FC<TableCompletionViewProps> = ({
   isSubmitted,
   onJumpToParagraph,
   explanationLanguage,
+  flaggedQuestions,
+  onToggleFlag,
 }) => {
   const getQuestion = (num: number) => questions.find((q) => q.questionNumber === num);
 
-  const renderInputField = (questionNumber: number, placeholder = 'one word only...') => {
+  const renderInputField = (questionNumber: number, placeholder = 'type answer...') => {
     const q = getQuestion(questionNumber);
     if (!q) return null;
 
@@ -36,12 +40,16 @@ export const TableCompletionView: React.FC<TableCompletionViewProps> = ({
     const isOverLimit = wordCount > 1; // Strict ONE WORD ONLY
     const isChecked = checkedQuestions[q.id] || (isSubmitted && mode === 'test');
     const isCorrect = isChecked ? checkAnswerCorrectness(q, answer) : false;
+    const isFlagged = flaggedQuestions?.has(q.id);
 
     return (
-      <span className="inline-flex flex-col mx-1 align-middle my-1">
+      <span id={`note-field-${q.id}`} className="inline-flex flex-col mx-1 align-middle my-1">
         <span className="inline-flex items-center gap-1.5">
-          <span className="shrink-0 w-6 h-6 rounded-md bg-[#0F172A] text-white text-xs font-bold flex items-center justify-center shadow-xs">
+          <span className="relative shrink-0 w-6 h-6 rounded-md bg-[#0F172A] text-white text-xs font-bold flex items-center justify-center shadow-xs">
             {questionNumber}
+            {isFlagged && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full ring-1 ring-white" />
+            )}
           </span>
           <input
             id={`note-input-q-${q.id}`}
@@ -58,6 +66,20 @@ export const TableCompletionView: React.FC<TableCompletionViewProps> = ({
                 : 'border-slate-300 bg-white hover:border-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 text-slate-900'
             }`}
           />
+          {onToggleFlag && (
+            <button
+              id={`flag-note-q-${q.id}`}
+              onClick={() => onToggleFlag(q.id)}
+              title={isFlagged ? 'Remove flag' : 'Flag question for review'}
+              className={`p-1 rounded transition-colors cursor-pointer ${
+                isFlagged
+                  ? 'text-amber-600 bg-amber-100 hover:bg-amber-200'
+                  : 'text-slate-300 hover:text-slate-500 hover:bg-slate-100'
+              }`}
+            >
+              <Flag className="w-3 h-3 fill-current" />
+            </button>
+          )}
           {isChecked && (
             <span className="shrink-0">
               {isCorrect ? (
@@ -101,7 +123,9 @@ export const TableCompletionView: React.FC<TableCompletionViewProps> = ({
             </h4>
           </div>
           <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-            Complete the notes below using words directly from paragraphs 6 to 9.
+            {mode === 'practice'
+              ? 'Complete the notes below using words directly from paragraphs 6 to 9.'
+              : 'Complete the notes below.'}
           </p>
         </div>
         <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
@@ -118,15 +142,17 @@ export const TableCompletionView: React.FC<TableCompletionViewProps> = ({
               <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
               <h5 className="font-bold text-slate-900 text-base">The Small Blue</h5>
             </div>
-            <button
-              onClick={() => onJumpToParagraph(6)}
-              className="inline-flex items-center gap-1 text-[11px] text-blue-700 hover:text-blue-900 font-medium bg-white px-2 py-0.5 rounded border border-blue-200 shadow-2xs cursor-pointer"
-              title="Jump to Paragraph 6 (The Small Blue)"
-            >
-              <BookOpen className="w-3 h-3 text-blue-600" />
-              <span>Para 6</span>
-              <ExternalLink className="w-2.5 h-2.5" />
-            </button>
+            {(mode === 'practice' || isSubmitted) && (
+              <button
+                onClick={() => onJumpToParagraph(6)}
+                className="inline-flex items-center gap-1 text-[11px] text-blue-700 hover:text-blue-900 font-medium bg-white px-2 py-0.5 rounded border border-blue-200 shadow-2xs cursor-pointer"
+                title="Jump to Paragraph 6 (The Small Blue)"
+              >
+                <BookOpen className="w-3 h-3 text-blue-600" />
+                <span>Para 6</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </button>
+            )}
           </div>
 
           <ul className="space-y-3 pl-2">
@@ -134,8 +160,8 @@ export const TableCompletionView: React.FC<TableCompletionViewProps> = ({
               <span className="text-slate-400 mt-1 font-bold">•</span>
               <div className="flex-1">
                 <span>lives in large</span>
-                {renderInputField(7, 'e.g. colonies')}
-                {explanationLanguage !== 'en' && (
+                {renderInputField(7, 'type answer...')}
+                {(mode === 'practice' || isSubmitted) && explanationLanguage !== 'en' && (
                   <span className="text-[11px] text-slate-500 italic block mt-0.5">
                     (sống thành những ... lớn / các bầy đàn lớn)
                   </span>
@@ -147,8 +173,8 @@ export const TableCompletionView: React.FC<TableCompletionViewProps> = ({
               <span className="text-slate-400 mt-1 font-bold">•</span>
               <div className="flex-1">
                 <span>first appears at the start of</span>
-                {renderInputField(8, 'e.g. spring')}
-                {explanationLanguage !== 'en' && (
+                {renderInputField(8, 'type answer...')}
+                {(mode === 'practice' || isSubmitted) && explanationLanguage !== 'en' && (
                   <span className="text-[11px] text-slate-500 italic block mt-0.5">
                     (xuất hiện lần đầu vào thời điểm bắt đầu của ...)
                   </span>
@@ -160,7 +186,7 @@ export const TableCompletionView: React.FC<TableCompletionViewProps> = ({
               <span className="text-slate-400 mt-1 font-bold">•</span>
               <div className="flex-1 text-slate-600 font-medium">
                 <span>completes more than one reproductive cycle per year</span>
-                {explanationLanguage !== 'en' && (
+                {(mode === 'practice' || isSubmitted) && explanationLanguage !== 'en' && (
                   <span className="text-[11px] text-slate-400 italic block mt-0.5">
                     (hoàn thành nhiều hơn một chu kỳ sinh sản mỗi năm)
                   </span>
@@ -177,15 +203,17 @@ export const TableCompletionView: React.FC<TableCompletionViewProps> = ({
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
               <h5 className="font-bold text-slate-900 text-base">The High Brown Fritillary</h5>
             </div>
-            <button
-              onClick={() => onJumpToParagraph(7)}
-              className="inline-flex items-center gap-1 text-[11px] text-blue-700 hover:text-blue-900 font-medium bg-white px-2 py-0.5 rounded border border-blue-200 shadow-2xs cursor-pointer"
-              title="Jump to Paragraph 7 (The High Brown Fritillary)"
-            >
-              <BookOpen className="w-3 h-3 text-blue-600" />
-              <span>Para 7</span>
-              <ExternalLink className="w-2.5 h-2.5" />
-            </button>
+            {(mode === 'practice' || isSubmitted) && (
+              <button
+                onClick={() => onJumpToParagraph(7)}
+                className="inline-flex items-center gap-1 text-[11px] text-blue-700 hover:text-blue-900 font-medium bg-white px-2 py-0.5 rounded border border-blue-200 shadow-2xs cursor-pointer"
+                title="Jump to Paragraph 7 (The High Brown Fritillary)"
+              >
+                <BookOpen className="w-3 h-3 text-blue-600" />
+                <span>Para 7</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </button>
+            )}
           </div>
 
           <ul className="space-y-3 pl-2">
@@ -193,7 +221,7 @@ export const TableCompletionView: React.FC<TableCompletionViewProps> = ({
               <span className="text-slate-400 mt-1 font-bold">•</span>
               <div className="flex-1 text-slate-600 font-medium">
                 <span>has one reproductive cycle</span>
-                {explanationLanguage !== 'en' && (
+                {(mode === 'practice' || isSubmitted) && explanationLanguage !== 'en' && (
                   <span className="text-[11px] text-slate-400 italic block mt-0.5">
                     (chỉ có một chu kỳ sinh sản mỗi năm)
                   </span>
@@ -205,9 +233,9 @@ export const TableCompletionView: React.FC<TableCompletionViewProps> = ({
               <span className="text-slate-400 mt-1 font-bold">•</span>
               <div className="flex-1">
                 <span>is considered to be more</span>
-                {renderInputField(9, 'e.g. endangered')}
+                {renderInputField(9, 'type answer...')}
                 <span>than other species</span>
-                {explanationLanguage !== 'en' && (
+                {(mode === 'practice' || isSubmitted) && explanationLanguage !== 'en' && (
                   <span className="text-[11px] text-slate-500 italic block mt-0.5">
                     (được coi là ... hơn các loài khác)
                   </span>
@@ -219,8 +247,8 @@ export const TableCompletionView: React.FC<TableCompletionViewProps> = ({
               <span className="text-slate-400 mt-1 font-bold">•</span>
               <div className="flex-1">
                 <span>its caterpillars occupy a limited range of</span>
-                {renderInputField(10, 'e.g. habitat')}
-                {explanationLanguage !== 'en' && (
+                {renderInputField(10, 'type answer...')}
+                {(mode === 'practice' || isSubmitted) && explanationLanguage !== 'en' && (
                   <span className="text-[11px] text-slate-500 italic block mt-0.5">
                     (sâu bướm của nó chỉ cư ngụ ở một phạm vi ... hạn chế)
                   </span>
@@ -237,15 +265,17 @@ export const TableCompletionView: React.FC<TableCompletionViewProps> = ({
               <span className="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
               <h5 className="font-bold text-slate-900 text-base">The Silver-studded Blue</h5>
             </div>
-            <button
-              onClick={() => onJumpToParagraph(8)}
-              className="inline-flex items-center gap-1 text-[11px] text-blue-700 hover:text-blue-900 font-medium bg-white px-2 py-0.5 rounded border border-blue-200 shadow-2xs cursor-pointer"
-              title="Jump to Paragraph 8 (The Silver-studded Blue)"
-            >
-              <BookOpen className="w-3 h-3 text-blue-600" />
-              <span>Para 8</span>
-              <ExternalLink className="w-2.5 h-2.5" />
-            </button>
+            {(mode === 'practice' || isSubmitted) && (
+              <button
+                onClick={() => onJumpToParagraph(8)}
+                className="inline-flex items-center gap-1 text-[11px] text-blue-700 hover:text-blue-900 font-medium bg-white px-2 py-0.5 rounded border border-blue-200 shadow-2xs cursor-pointer"
+                title="Jump to Paragraph 8 (The Silver-studded Blue)"
+              >
+                <BookOpen className="w-3 h-3 text-blue-600" />
+                <span>Para 8</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </button>
+            )}
           </div>
 
           <ul className="space-y-3 pl-2">
@@ -253,8 +283,8 @@ export const TableCompletionView: React.FC<TableCompletionViewProps> = ({
               <span className="text-slate-400 mt-1 font-bold">•</span>
               <div className="flex-1">
                 <span>is already able to reproduce twice a year in warm areas of</span>
-                {renderInputField(11, 'e.g. Europe')}
-                {explanationLanguage !== 'en' && (
+                {renderInputField(11, 'type answer...')}
+                {(mode === 'practice' || isSubmitted) && explanationLanguage !== 'en' && (
                   <span className="text-[11px] text-slate-500 italic block mt-0.5">
                     (đã có khả năng sinh sản hai lần một năm tại các khu vực ấm áp của ...)
                   </span>
@@ -271,15 +301,17 @@ export const TableCompletionView: React.FC<TableCompletionViewProps> = ({
               <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
               <h5 className="font-bold text-slate-900 text-base">The White Admiral</h5>
             </div>
-            <button
-              onClick={() => onJumpToParagraph(9)}
-              className="inline-flex items-center gap-1 text-[11px] text-blue-700 hover:text-blue-900 font-medium bg-white px-2 py-0.5 rounded border border-blue-200 shadow-2xs cursor-pointer"
-              title="Jump to Paragraph 9 (The White Admiral)"
-            >
-              <BookOpen className="w-3 h-3 text-blue-600" />
-              <span>Para 9</span>
-              <ExternalLink className="w-2.5 h-2.5" />
-            </button>
+            {(mode === 'practice' || isSubmitted) && (
+              <button
+                onClick={() => onJumpToParagraph(9)}
+                className="inline-flex items-center gap-1 text-[11px] text-blue-700 hover:text-blue-900 font-medium bg-white px-2 py-0.5 rounded border border-blue-200 shadow-2xs cursor-pointer"
+                title="Jump to Paragraph 9 (The White Admiral)"
+              >
+                <BookOpen className="w-3 h-3 text-blue-600" />
+                <span>Para 9</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </button>
+            )}
           </div>
 
           <ul className="space-y-3 pl-2">
@@ -287,9 +319,9 @@ export const TableCompletionView: React.FC<TableCompletionViewProps> = ({
               <span className="text-slate-400 mt-1 font-bold">•</span>
               <div className="flex-1">
                 <span>is found in</span>
-                {renderInputField(12, 'e.g. southern')}
+                {renderInputField(12, 'type answer...')}
                 <span>areas of England</span>
-                {explanationLanguage !== 'en' && (
+                {(mode === 'practice' || isSubmitted) && explanationLanguage !== 'en' && (
                   <span className="text-[11px] text-slate-500 italic block mt-0.5">
                     (được tìm thấy tại các vùng ... của nước Anh)
                   </span>
@@ -301,9 +333,9 @@ export const TableCompletionView: React.FC<TableCompletionViewProps> = ({
               <span className="text-slate-400 mt-1 font-bold">•</span>
               <div className="flex-1">
                 <span>both climate change and the</span>
-                {renderInputField(13, 'e.g. diet')}
+                {renderInputField(13, 'type answer...')}
                 <span>of the caterpillar are possible reasons for decline</span>
-                {explanationLanguage !== 'en' && (
+                {(mode === 'practice' || isSubmitted) && explanationLanguage !== 'en' && (
                   <span className="text-[11px] text-slate-500 italic block mt-0.5">
                     (cả biến đổi khí hậu lẫn ... của sâu bướm đều là những nguyên nhân tiềm tàng gây suy giảm)
                   </span>

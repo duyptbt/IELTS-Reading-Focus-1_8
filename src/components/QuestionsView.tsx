@@ -321,49 +321,51 @@ export const QuestionsView: React.FC<QuestionsViewProps> = ({
         </div>
 
         <div className="flex items-center space-x-3">
-          {/* Language preference for explanations & tips */}
-          <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 shadow-2xs text-[11px]">
-            <span className="px-1.5 text-slate-400 flex items-center gap-1 font-medium">
-              <Languages className="w-3 h-3 text-blue-600" />
-              <span className="hidden md:inline">Language:</span>
-            </span>
-            <button
-              id="lang-bilingual-btn"
-              onClick={() => setExplanationLanguage('bilingual')}
-              className={`px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
-                explanationLanguage === 'bilingual'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-              title="Song ngữ (Bilingual English & Vietnamese)"
-            >
-              Song ngữ
-            </button>
-            <button
-              id="lang-vi-btn"
-              onClick={() => setExplanationLanguage('vi')}
-              className={`px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
-                explanationLanguage === 'vi'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-              title="Tiếng Việt (Vietnamese focus)"
-            >
-              Tiếng Việt
-            </button>
-            <button
-              id="lang-en-btn"
-              onClick={() => setExplanationLanguage('en')}
-              className={`px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
-                explanationLanguage === 'en'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-              title="English only"
-            >
-              English
-            </button>
-          </div>
+          {/* Language preference for explanations & tips - Only shown in Practice Mode or after test submission */}
+          {(mode === 'practice' || isSubmitted) && (
+            <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 shadow-2xs text-[11px]">
+              <span className="px-1.5 text-slate-400 flex items-center gap-1 font-medium">
+                <Languages className="w-3 h-3 text-blue-600" />
+                <span className="hidden md:inline">Language:</span>
+              </span>
+              <button
+                id="lang-bilingual-btn"
+                onClick={() => setExplanationLanguage('bilingual')}
+                className={`px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
+                  explanationLanguage === 'bilingual'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="Song ngữ (Bilingual English & Vietnamese)"
+              >
+                Song ngữ
+              </button>
+              <button
+                id="lang-vi-btn"
+                onClick={() => setExplanationLanguage('vi')}
+                className={`px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
+                  explanationLanguage === 'vi'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="Tiếng Việt (Vietnamese focus)"
+              >
+                Tiếng Việt
+              </button>
+              <button
+                id="lang-en-btn"
+                onClick={() => setExplanationLanguage('en')}
+                className={`px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
+                  explanationLanguage === 'en'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="English only"
+              >
+                English
+              </button>
+            </div>
+          )}
 
           <div className="text-xs font-medium text-slate-500">
             Answered:{' '}
@@ -494,7 +496,7 @@ export const QuestionsView: React.FC<QuestionsViewProps> = ({
             return (
               <a
                 key={q.id}
-                href={`#question-card-${q.id}`}
+                href={mode === 'test' && !isSubmitted && q.id >= 7 ? `#note-field-${q.id}` : `#question-card-${q.id}`}
                 id={`quick-jump-q-${q.id}`}
                 className={`relative shrink-0 w-7 h-7 sm:w-7.5 sm:h-7.5 rounded text-xs font-bold flex items-center justify-center border transition-all ${badgeColor}`}
                 title={`Jump to Question ${q.questionNumber}`}
@@ -514,8 +516,10 @@ export const QuestionsView: React.FC<QuestionsViewProps> = ({
         
         {/* ========================================================= */}
         {/* EXAM STRATEGY: REVIEW, USEFUL STRATEGIES & ERROR ANALYSIS */}
+        {/* (Only in Practice Mode - Completely Removed in Test Mode) */}
         {/* ========================================================= */}
-        <div className="space-y-3">
+        {mode === 'practice' && (
+          <div className="space-y-3">
           {/* Review Box: 4 Questions from page 1 */}
           <div className="border border-indigo-200 bg-indigo-50/70 rounded-xl overflow-hidden shadow-2xs">
             <button
@@ -826,6 +830,7 @@ export const QuestionsView: React.FC<QuestionsViewProps> = ({
             )}
           </div>
         </div>
+        )}
 
         {/* ========================================================= */}
         {/* PART 1: Questions 1–6 (True / False / Not Given)         */}
@@ -850,15 +855,15 @@ export const QuestionsView: React.FC<QuestionsViewProps> = ({
               <div className="text-xs text-slate-300 mt-2.5 space-y-1.5 font-medium bg-slate-800/80 p-3 rounded-lg border border-slate-700">
                 <p>
                   <strong className="text-emerald-400 font-bold">TRUE</strong> — if the statement agrees with the information
-                  {explanationLanguage !== 'en' && <span className="text-slate-400 italic ml-1">(khẳng định đúng theo bài đọc)</span>}
+                  {mode === 'practice' && explanationLanguage !== 'en' && <span className="text-slate-400 italic ml-1">(khẳng định đúng theo bài đọc)</span>}
                 </p>
                 <p>
                   <strong className="text-rose-400 font-bold">FALSE</strong> — if the statement contradicts the information
-                  {explanationLanguage !== 'en' && <span className="text-slate-400 italic ml-1">(khẳng định mâu thuẫn/trái ngược với bài đọc)</span>}
+                  {mode === 'practice' && explanationLanguage !== 'en' && <span className="text-slate-400 italic ml-1">(khẳng định mâu thuẫn/trái ngược với bài đọc)</span>}
                 </p>
                 <p>
                   <strong className="text-amber-400 font-bold">NOT GIVEN</strong> — if there is no information on this
-                  {explanationLanguage !== 'en' && <span className="text-slate-400 italic ml-1">(không có thông tin để xác thực)</span>}
+                  {mode === 'practice' && explanationLanguage !== 'en' && <span className="text-slate-400 italic ml-1">(không có thông tin để xác thực)</span>}
                 </p>
               </div>
             </div>
@@ -1139,7 +1144,7 @@ export const QuestionsView: React.FC<QuestionsViewProps> = ({
               <p className="text-xs text-slate-300 mt-1 font-medium">
                 Choose <span className="underline font-bold text-amber-300">ONE WORD ONLY</span> from the passage for each answer. Write your answers in boxes 7–13 on your answer sheet.
               </p>
-              {explanationLanguage !== 'en' && (
+              {mode === 'practice' && explanationLanguage !== 'en' && (
                 <p className="text-[11px] text-blue-300/90 mt-1.5 italic">
                   Hướng dẫn: Chọn CHỈ MỘT TỪ từ bài đọc cho mỗi câu trả lời.
                 </p>
@@ -1193,11 +1198,15 @@ export const QuestionsView: React.FC<QuestionsViewProps> = ({
               onCheckQuestion={handleCheckQuestion}
               onJumpToParagraph={onJumpToParagraph}
               explanationLanguage={explanationLanguage}
+              flaggedQuestions={flaggedQuestions}
+              onToggleFlag={onToggleFlag}
             />
 
             {/* Questions 7-13 Item Cards with Details, Distractors & Explanations */}
-            <div className="space-y-4">
-              {part2Questions.map((q) => {
+            {/* In Test Mode before submission, the Note Completion table above is the sole interface */}
+            {(mode === 'practice' || isSubmitted) && (
+              <div className="space-y-4">
+                {part2Questions.map((q) => {
                 const answer = userAnswers[q.id] || '';
                 const wordCount = getWordCount(answer);
                 const isOverLimit = wordCount > (q.maxWords || 1);
@@ -1434,11 +1443,12 @@ export const QuestionsView: React.FC<QuestionsViewProps> = ({
                 );
               })}
             </div>
+            )}
           </div>
         )}
 
-        {/* Bottom Banner to Consolidation View */}
-        {onGoToConsolidation && (
+        {/* Bottom Banner to Consolidation View - Only in Practice Mode or after test submission */}
+        {(mode === 'practice' || isSubmitted) && onGoToConsolidation && (
           <div className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-xs">
